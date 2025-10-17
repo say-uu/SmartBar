@@ -1,0 +1,452 @@
+[
+  {
+    "name": "CocaCola 250ml",
+    "desc": "Chilled CocaCola soft drink.",
+    "price": 250,
+    "img": "/soft drinks/cocacola 250ml.png",
+    "status": "Available",
+    "category": "Soft Drinks",
+    "stock": 24
+  },
+  {
+    "name": "Cream Soda 250ml",
+    "desc": "Sweet and creamy soda.",
+    "price": 250,
+    "img": "/soft drinks/cream soda 250ml.png",
+    "status": "Available",
+    "category": "Soft Drinks",
+    "stock": 18
+  },
+  {
+    "name": "Fanta 250ml",
+    "desc": "Orange flavored Fanta.",
+    "price": 250,
+    "img": "/soft drinks/fanta 250ml.png",
+    "status": "Available",
+    "category": "Soft Drinks",
+    "stock": 16
+  },
+  {
+    "name": "Mountain Dew 250ml",
+    "desc": "Refreshing Mountain Dew.",
+    "price": 250,
+    "img": "/soft drinks/Mountain-Dew-250ml.png",
+    "status": "Available",
+    "category": "Soft Drinks",
+    "stock": 20
+  },
+  {
+    "name": "Pepsi 250ml",
+    "desc": "Classic Pepsi soft drink.",
+    "price": 250,
+    "img": "/soft drinks/pepsi 250ml.png",
+    "status": "Available",
+    "category": "Soft Drinks",
+    "stock": 22
+  },
+  {
+    "name": "Seven Up 250ml",
+    "desc": "Lemon-lime Seven Up.",
+    "price": 250,
+    "img": "/soft drinks/sevenup 250ml.png",
+    "status": "Available",
+    "category": "Soft Drinks",
+    "stock": 17
+  },
+  {
+    "name": "Sprite 250ml",
+    "desc": "Crisp Sprite soft drink.",
+    "price": 250,
+    "img": "/soft drinks/sprite 250ml.png",
+    "status": "Available",
+    "category": "Soft Drinks",
+    "stock": 19
+  },
+  {
+    "name": "Cheese & Onion Mixed Bite",
+    "desc": "Cheesy and onion flavored snack mix.",
+    "price": 200,
+    "img": "/Bites/Cheese & Onion mixed bite.png",
+    "status": "Available",
+    "category": "Bites",
+    "stock": 30
+  },
+  {
+    "name": "Devilled Peanuts",
+    "desc": "Spicy devilled peanuts.",
+    "price": 150,
+    "img": "/Bites/Devilled peanuts.png",
+    "status": "Available",
+    "category": "Bites",
+    "stock": 26
+  },
+  {
+    "name": "Fried Dhal Bite",
+    "desc": "Crispy fried dhal snack.",
+    "price": 150,
+    "img": "/Bites/Fried dhal bite.png",
+    "status": "Available",
+    "category": "Bites",
+    "stock": 28
+  },
+  {
+    "name": "Garlic Mixed Bite",
+    "desc": "Garlic flavored snack mix.",
+    "price": 200,
+    "img": "/Bites/Garlic mixed bite.png",
+    "status": "Available",
+    "category": "Bites",
+    "stock": 25
+  },
+  {
+    "name": "Hot & Spicy Mixture",
+    "desc": "Hot and spicy snack mix.",
+    "price": 200,
+    "img": "/Bites/Hot & Spicy mixture.png",
+    "status": "Available",
+    "category": "Bites",
+    "stock": 24
+  },
+  {
+    "name": "Indian Mixture",
+    "desc": "Traditional Indian snack mix.",
+    "price": 200,
+    "img": "/Bites/Indian mixture.png",
+    "status": "Available",
+    "category": "Bites",
+    "stock": 22
+  },
+  {
+    "name": "Onion Mixed Bite",
+    "desc": "Onion flavored snack mix.",
+    "price": 200,
+    "img": "/Bites/Onion mixed bite.png",
+    "status": "Available",
+    "category": "Bites",
+    "stock": 20
+  },
+  {
+    "name": "Spicy Bite",
+    "desc": "Spicy snack bite.",
+    "price": 200,
+    "img": "/Bites/Spicy bite.png",
+    "status": "Available",
+    "category": "Bites",
+    "stock": 18
+  },
+  {
+    "name": "Spicy Chick Peas Bite",
+    "desc": "Spicy chickpeas snack.",
+    "price": 200,
+    "img": "/Bites/Spicy chick peas bite.png",
+    "status": "Available",
+    "category": "Bites",
+    "stock": 18
+  },
+  {
+    "name": "Carlsberg",
+    "desc": "Classic Carlsberg beer.",
+    "price": 600,
+    "img": "/Beer/carlsberg.png",
+    "status": "Available",
+    "category": "Beer",
+    "stock": 40
+  },
+  {
+    "name": "Heineken",
+    "desc": "Premium Heineken beer.",
+    "price": 650,
+    "img": "/Beer/heinken.png",
+    "status": "Available",
+    "category": "Beer",
+    "stock": 35
+  },
+  {
+    "name": "Lion Beer 330ml",
+    "desc": "Lion beer, 330ml bottle.",
+    "price": 500,
+    "img": "/Beer/Lion beer 330ml.png",
+    "status": "Available",
+    "category": "Beer",
+    "stock": 50
+  },
+  {
+    "name": "Lion Beer 500ml",
+    "desc": "Lion beer, 500ml bottle.",
+    "price": 800,
+    "img": "/Beer/lion beer 500ml.png",
+    "status": "Available",
+    "category": "Beer",
+    "stock": 45
+  },
+  {
+    "name": "Absolut Lime",
+    "desc": "Absolut Lime vodka.",
+    "price": 7000,
+    "img": "/Hard liquor/Absolut lime.png",
+    "status": "Available",
+    "category": "Hard Liquor",
+    "stock": 5
+  },
+  {
+    "name": "Bowmore",
+    "desc": "Bowmore single malt whisky.",
+    "price": 12000,
+    "img": "/Hard liquor/Bowmore.png",
+    "status": "Available",
+    "category": "Hard Liquor",
+    "stock": 3
+  },
+  {
+    "name": "Ceylon Walker",
+    "desc": "Ceylon Walker whisky.",
+    "price": 8500,
+    "img": "/Hard liquor/Ceylon walker.png",
+    "status": "Available",
+    "category": "Hard Liquor",
+    "stock": 6
+  },
+  {
+    "name": "Chivas",
+    "desc": "Chivas Regal whisky.",
+    "price": 15000,
+    "img": "/Hard liquor/chivas.png",
+    "status": "Available",
+    "category": "Hard Liquor",
+    "stock": 4
+  },
+  {
+    "name": "Eristoff",
+    "desc": "Eristoff vodka.",
+    "price": 6000,
+    "img": "/Hard liquor/Eristoff.png",
+    "status": "Available",
+    "category": "Hard Liquor",
+    "stock": 8
+  },
+  {
+    "name": "Gold Label Premium Arrack",
+    "desc": "Premium arrack.",
+    "price": 5000,
+    "img": "/Hard liquor/gold label premimum arrack.png",
+    "status": "Available",
+    "category": "Hard Liquor",
+    "stock": 7
+  },
+  {
+    "name": "Johnnie Walker",
+    "desc": "Johnnie Walker whisky.",
+    "price": 18000,
+    "img": "/Hard liquor/Johnnie walker.png",
+    "status": "Available",
+    "category": "Hard Liquor",
+    "stock": 2
+  },
+  {
+    "name": "Old Arrack",
+    "desc": "Old Arrack spirit.",
+    "price": 4000,
+    "img": "/Hard liquor/Oldarrack.png",
+    "status": "Available",
+    "category": "Hard Liquor",
+    "stock": 9
+  },
+  {
+    "name": "Appifiz Green Apple",
+    "desc": "Green apple sun crush.",
+    "price": 350,
+    "img": "/Sun crush/Appifiz green apple.png",
+    "status": "Available",
+    "category": "Sun Crush",
+    "stock": 20
+  },
+  {
+    "name": "Chocolate",
+    "desc": "Chocolate sun crush.",
+    "price": 350,
+    "img": "/Sun crush/chocolate.png",
+    "status": "Available",
+    "category": "Sun Crush",
+    "stock": 20
+  },
+  {
+    "name": "Grape",
+    "desc": "Grape sun crush.",
+    "price": 350,
+    "img": "/Sun crush/Grape.png",
+    "status": "Available",
+    "category": "Sun Crush",
+    "stock": 20
+  },
+  {
+    "name": "Lemon",
+    "desc": "Lemon sun crush.",
+    "price": 350,
+    "img": "/Sun crush/lemon.png",
+    "status": "Available",
+    "category": "Sun Crush",
+    "stock": 20
+  },
+  {
+    "name": "Mango",
+    "desc": "Mango sun crush.",
+    "price": 350,
+    "img": "/Sun crush/mango.png",
+    "status": "Available",
+    "category": "Sun Crush",
+    "stock": 20
+  },
+  {
+    "name": "Red Apple",
+    "desc": "Red apple sun crush.",
+    "price": 350,
+    "img": "/Sun crush/redapple.png",
+    "status": "Available",
+    "category": "Sun Crush",
+    "stock": 20
+  },
+  {
+    "name": "Sparkling Green Apple",
+    "desc": "Sparkling green apple sun crush.",
+    "price": 400,
+    "img": "/Sun crush/sparkling green apple.png",
+    "status": "Available",
+    "category": "Sun Crush",
+    "stock": 20
+  },
+  {
+    "name": "Sparkling Oragena",
+    "desc": "Sparkling oragena sun crush.",
+    "price": 400,
+    "img": "/Sun crush/sparkling oragena.png",
+    "status": "Available",
+    "category": "Sun Crush",
+    "stock": 20
+  },
+  {
+    "name": "Strawberry Shake",
+    "desc": "Strawberry shake sun crush.",
+    "price": 400,
+    "img": "/Sun crush/strawberry shake.png",
+    "status": "Available",
+    "category": "Sun Crush",
+    "stock": 20
+  },
+  {
+    "name": "Sun Crush Green Apple",
+    "desc": "Green apple sun crush.",
+    "price": 350,
+    "img": "/Sun crush/sun-crush-green-apple.png",
+    "status": "Available",
+    "category": "Sun Crush",
+    "stock": 20
+  },
+  {
+    "name": "Aloe Vera",
+    "desc": "Aloe vera yoghurt drink.",
+    "price": 300,
+    "img": "/Yoghurt Drinks/Alovera.png",
+    "status": "Available",
+    "category": "Yoghurt Drinks",
+    "stock": 15
+  },
+  {
+    "name": "Orange",
+    "desc": "Orange yoghurt drink.",
+    "price": 300,
+    "img": "/Yoghurt Drinks/orange.png",
+    "status": "Available",
+    "category": "Yoghurt Drinks",
+    "stock": 15
+  },
+  {
+    "name": "Strawberry",
+    "desc": "Strawberry yoghurt drink.",
+    "price": 300,
+    "img": "/Yoghurt Drinks/strawberry.png",
+    "status": "Available",
+    "category": "Yoghurt Drinks",
+    "stock": 15
+  },
+  {
+    "name": "Vanilla",
+    "desc": "Vanilla yoghurt drink.",
+    "price": 300,
+    "img": "/Yoghurt Drinks/vanila(1).png",
+    "status": "Available",
+    "category": "Yoghurt Drinks",
+    "stock": 15
+  },
+  {
+    "name": "Woodapple",
+    "desc": "Woodapple yoghurt drink.",
+    "price": 300,
+    "img": "/Yoghurt Drinks/woodapple.png",
+    "status": "Available",
+    "category": "Yoghurt Drinks",
+    "stock": 15
+  },
+  {
+    "name": "Almond Milk Chocolate",
+    "desc": "Rich milk chocolate with crunchy almonds.",
+    "price": 400,
+    "img": "/Chocolates/Almond milk chocolate.png",
+    "status": "Available",
+    "category": "Chocolates",
+    "stock": 25
+  },
+  {
+    "name": "Cashew & Crispy Milk Chocolate",
+    "desc": "Milk chocolate with cashew and crispy bits.",
+    "price": 400,
+    "img": "/Chocolates/Cashew & crispy milk chocolate.png",
+    "status": "Available",
+    "category": "Chocolates",
+    "stock": 25
+  },
+  {
+    "name": "Cashew Nut Milk Chocolate",
+    "desc": "Smooth milk chocolate with cashew nuts.",
+    "price": 400,
+    "img": "/Chocolates/Cashew nut mil chocolate.png",
+    "status": "Available",
+    "category": "Chocolates",
+    "stock": 25
+  },
+  {
+    "name": "Fruit & Nut Milk Chocolate",
+    "desc": "Milk chocolate with fruit and nut mix.",
+    "price": 400,
+    "img": "/Chocolates/Fruit & nut milk chocolate.png",
+    "status": "Available",
+    "category": "Chocolates",
+    "stock": 25
+  },
+  {
+    "name": "Hazelnut Coffee Chocolate",
+    "desc": "Chocolate with hazelnut and coffee flavor.",
+    "price": 400,
+    "img": "/Chocolates/hazelenut coffee chocolate.png",
+    "status": "Available",
+    "category": "Chocolates",
+    "stock": 25
+  },
+  {
+    "name": "Hazelnut Milk Chocolate",
+    "desc": "Creamy milk chocolate with hazelnuts.",
+    "price": 400,
+    "img": "/Chocolates/Hazelnut milk chocolate.png",
+    "status": "Available",
+    "category": "Chocolates",
+    "stock": 25
+  },
+  {
+    "name": "Milk Chocolate",
+    "desc": "Classic smooth milk chocolate.",
+    "price": 350,
+    "img": "/Chocolates/milk chocolate.png",
+    "status": "Available",
+    "category": "Chocolates",
+    "stock": 25
+  }
+]

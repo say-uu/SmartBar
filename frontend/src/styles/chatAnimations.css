@@ -1,0 +1,47 @@
+/* Chat Assistant animations */
+@keyframes chatPopIn {
+  0% {
+    transform: translateY(20px) scale(0.92);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-4px) scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes chatPopOut {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: translateY(-6px) scale(0.98);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(25px) scale(0.9);
+    opacity: 0;
+  }
+}
+@keyframes floatPulse {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+.chat-fab-floating {
+  animation: floatPulse 4s ease-in-out infinite;
+}
+.chat-panel-enter {
+  animation: chatPopIn 0.45s cubic-bezier(0.16, 0.8, 0.3, 1);
+}
+.chat-panel-exit {
+  animation: chatPopOut 0.35s cubic-bezier(0.6, 0.2, 0.4, 1) forwards;
+}

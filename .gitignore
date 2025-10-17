@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+frontend/dist/
+
+# Local uploads
+backend/uploads/
+uploads/
+
+# Env and local-only config
+.env
+.env.*
+!.env.example
+
+# IDE/editor
+.vscode/
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Caches
+.parcel-cache/
+.turbo/
+.next/
+.vercel/
