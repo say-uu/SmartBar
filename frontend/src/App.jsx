@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/Home/Home.jsx";
 import CadetLogin from "./pages/Cadet/Login.jsx";
@@ -22,13 +22,19 @@ import ViewCadets from "./pages/Manager/ViewCadets.jsx";
 import Reports from "./pages/Manager/Reports.jsx";
 import SystemSettings from "./pages/Manager/SystemSettings.jsx";
 import PrivateRoute from "./routes/PrivateRoute";
+import ChatAssistant from "./components/ChatAssistant.jsx";
+import { AuthContext } from "./contexts/AuthContext";
 
 function AppInner() {
   const location = useLocation();
-  // Chat assistant removed
+  const { token, role } = useContext(AuthContext);
+  // Enable chat only when the cadet is on the dashboard page
+  const isCadetDashboard = location.pathname === "/cadet/dashboard";
+  const chatEnabled = Boolean(token) && role === "cadet" && isCadetDashboard;
   return (
     <>
-      {/* ChatAssistant hidden */}
+      {/* Floating chat assistant, shown for authenticated cadets */}
+      <ChatAssistant enabled={chatEnabled} />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/cadet/login" element={<CadetLogin />} />
@@ -112,6 +118,10 @@ function AppInner() {
         <Route path="/manager/login" element={<ManagerLogin />} />
         <Route path="/manager/register" element={<ManagerRegister />} />
         <Route
+          path="/manager/forgot-password"
+          element={<ManagerResetPassword />}
+        />
+        <Route
           path="/manager/reset-password"
           element={<ManagerResetPassword />}
         />
@@ -155,6 +165,7 @@ function AppInner() {
             </PrivateRoute>
           }
         />
+
         {/** Pickup scanner route removed (QR feature deprecated) **/}
       </Routes>
     </>

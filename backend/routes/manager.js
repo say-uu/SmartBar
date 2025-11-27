@@ -4,6 +4,7 @@ const Manager = require("../models/Manager");
 const jwt = require("jsonwebtoken");
 const { authenticateToken } = require("../middleware/authMiddleware");
 const Cadet = require("../models/Cadet");
+const Activity = require("../models/Activity");
 
 // Manager Registration
 router.post("/register", async (req, res) => {
@@ -77,6 +78,29 @@ router.post("/login", async (req, res) => {
   } catch (err) {
     console.error("Manager login error:", err);
     res.status(500).json({ error: "Login failed." });
+  }
+});
+
+// Manager Password Reset
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { managerId, newPassword } = req.body;
+    if (!managerId || !newPassword) {
+      return res
+        .status(400)
+        .json({ error: "Manager ID and new password are required." });
+    }
+    const manager = await Manager.findOne({ managerId });
+    if (!manager) {
+      return res.status(404).json({ error: "Manager not found." });
+    }
+    manager.password = newPassword;
+    manager.markModified("password");
+    await manager.save();
+    res.json({ message: "Password reset successful." });
+  } catch (err) {
+    console.error("Manager reset password error:", err);
+    res.status(500).json({ error: "Password reset failed." });
   }
 });
 
@@ -169,6 +193,53 @@ router.get(
     } catch (err) {
       console.error("[manager] cadets summary error:", err);
       res.status(500).json({ error: "Failed to fetch summary" });
+    }
+  }
+);
+
+// POST /api/manager/cadets/set-allowance - bulk update monthly allowance
+router.post(
+  "/cadets/set-allowance",
+  authenticateToken,
+  requireManager,
+  async (req, res) => {
+    try {
+      const { amount } = req.body;
+      const numeric = Number(amount);
+      if (!Number.isFinite(numeric) || numeric < 0) {
+        return res.status(400).json({ error: "Invalid allowance amount." });
+      }
+      const normalized = Math.round(numeric);
+      const updateResult = await Cadet.updateMany(
+        {},
+        {
+          $set: {
+            monthlyAllowance: normalized,
+            allowanceHalfNotified: false,
+          },
+        }
+      );
+      try {
+        await Activity.create({
+          kind: "allowance",
+          message: `Monthly allowance set to Rs.${normalized}`,
+          amount: normalized,
+          unit: "Rs",
+          actorType: "manager",
+          actorId: req.user?.managerId || "",
+          meta: { bulk: true },
+        });
+      } catch (activityErr) {
+        console.warn("[manager] allowance activity log failed", activityErr);
+      }
+      res.json({
+        message: "Monthly allowance updated successfully.",
+        updated: updateResult.modifiedCount,
+        value: normalized,
+      });
+    } catch (err) {
+      console.error("[manager] set allowances error:", err);
+      res.status(500).json({ error: "Failed to update allowances" });
     }
   }
 );

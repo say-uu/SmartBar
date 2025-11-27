@@ -4,13 +4,20 @@ import { FaUserCircle, FaChartBar } from "react-icons/fa";
 
 export default function Home() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#232946] via-[#2d3a6b] to-[#1e3c72]">
-      <div className="w-full max-w-6xl mx-auto flex flex-col items-center">
+    <div className="relative min-h-screen w-full overflow-hidden">
+      {/* Background image from public folder */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/bar image.webp')" }}
+      />
+      {/* Dark gradient overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#151a2d]/90 via-[#1f2b4b]/90 to-[#0f264f]/90" />
+      <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col items-center px-4 sm:px-6">
         {/* Header Section */}
         <div className="w-full pt-16 pb-8 text-center flex flex-col items-center">
           <img src="/crest.png" alt="KDU Crest" className="h-20 mx-auto mb-4" />
           <h1 className="text-5xl font-extrabold text-white mb-4 drop-shadow-lg flex items-center justify-center gap-4">
-            Welcome to Smartbar
+            Welcome to Smart Bar
           </h1>
           <p className="text-xl text-blue-100 mb-2">
             Bar Management System for Kothalawala Defence University Cadet Mess
@@ -121,8 +128,8 @@ export default function Home() {
         </div>
         {/* Footer Section */}
         <div className="w-full text-center py-6 text-gray-300 text-sm">
-          &copy; 2025 Smartbar - Kothalawala Defence University Cadet Mess
-          Management System. All rights reserved.
+          &copy; 2025 Smartbar - Kothalawala Defence University Bar Management
+          System. All rights reserved.
         </div>
       </div>
     </div>

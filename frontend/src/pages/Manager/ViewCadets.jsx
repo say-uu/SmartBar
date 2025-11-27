@@ -123,9 +123,9 @@ export default function ViewCadets() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 py-10 px-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-10">
+    <div className="bg-gradient-to-b from-slate-50 via-white to-sky-50 py-4 px-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-3xl font-extrabold tracking-tight text-slate-800">
               Cadet Management
@@ -152,7 +152,7 @@ export default function ViewCadets() {
         </div>
 
         {/* Tiles */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
           {/* Tile 1 */}
           <div className="rounded-2xl p-5 bg-sky-100 border border-sky-200 shadow-sm hover:shadow-md transition group">
             <div className="flex items-center justify-between">
@@ -221,7 +221,7 @@ export default function ViewCadets() {
         </div>
 
         {/* Search + Filter */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-4">
           <div className="relative flex-1">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
               <svg
@@ -243,7 +243,7 @@ export default function ViewCadets() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search cadets by name, ID, or company..."
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 bg-white/90 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-2xl border border-slate-200 bg-white/90 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
             />
           </div>
           <select
@@ -292,7 +292,7 @@ export default function ViewCadets() {
         )}
 
         {/* List */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {loading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (

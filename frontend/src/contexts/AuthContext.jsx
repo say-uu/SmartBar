@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from "react";
 import axiosClient from "../api/axiosClient";
+import axios from "axios";
 
 export const AuthContext = createContext();
 
@@ -27,7 +28,28 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   const login = async (credentials, loginRole) => {
-    const res = await axiosClient.post("/api/auth/login", credentials);
+    let res;
+    try {
+      res = await axiosClient.post("/api/auth/login", credentials);
+    } catch (err) {
+      // If proxied request failed (no response), try direct backend host as a fallback.
+      if (!err.response) {
+        try {
+          // Try direct localhost backend (dev fallback)
+          res = await axios.post(
+            "http://localhost:5000/api/auth/login",
+            credentials
+          );
+        } catch (err2) {
+          // Rethrow original error if fallback also failed
+          throw err2 || err;
+        }
+      } else {
+        // Response existed (400/500), rethrow so caller can display message
+        throw err;
+      }
+    }
+
     setToken(res.data.token);
     setRole(loginRole);
     localStorage.setItem("token", res.data.token);

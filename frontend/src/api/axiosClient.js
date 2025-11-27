@@ -1,5 +1,6 @@
 import axios from "axios";
 const axiosClient = axios.create({
+  // Default to local backend unless an override is provided via env.
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000",
 });
 axiosClient.interceptors.request.use((config) => {

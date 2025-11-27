@@ -36,6 +36,7 @@ export function CartProvider({ children }) {
       image: item.image || item.img,
     };
     try {
+      // POST to backend (relative path) — during dev this will be proxied by Vite
       await axiosClient.post("/api/cart/add", {
         item: cartItem,
       });
@@ -45,7 +46,16 @@ export function CartProvider({ children }) {
         qty: item.qty ?? item.quantity ?? 1,
       }));
       setItems(items);
-    } catch (err) {}
+    } catch (err) {
+      // Helpful debug logging during development to find why adds fail
+      // eslint-disable-next-line no-console
+      console.error(
+        "Cart addItem failed:",
+        err?.response?.status,
+        err?.response?.data || err?.message || err
+      );
+      throw err;
+    }
   };
 
   // Update quantity (remove if qty <= 0)
@@ -95,9 +105,11 @@ export function CartProvider({ children }) {
 
   const total = () => items.reduce((sum, i) => sum + i.price * i.qty, 0);
 
+  const count = items.reduce((s, it) => s + (it.qty || 0), 0);
+
   return (
     <CartContext.Provider
-      value={{ items, addItem, updateQty, removeItem, clear, total }}
+      value={{ items, addItem, updateQty, removeItem, clear, total, count }}
     >
       {children}
     </CartContext.Provider>

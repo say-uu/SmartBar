@@ -550,7 +550,7 @@ export default function Reports() {
   };
 
   return (
-    <div className="relative max-w-7xl mx-auto p-8 bg-white">
+    <div className="relative max-w-7xl mx-auto p-6 bg-white">
       <div className="relative">
         <header className="mb-8">
           <h1 className="text-2xl font-semibold tracking-tight text-gray-800">
@@ -560,14 +560,13 @@ export default function Reports() {
             Generate comprehensive reports and view analytics
           </p>
         </header>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column: Selection */}
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 gap-6">
+          <div className="space-y-6">
             <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 md:p-6">
               <h2 className="text-sm font-medium text-gray-600 mb-4 uppercase tracking-wide">
                 Select Report Type
               </h2>
-              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {REPORT_TYPES.map((r) => {
                   const active = type === r.key;
                   const variant = COLOR_VARIANTS[r.key];
@@ -625,7 +624,7 @@ export default function Reports() {
               </div>
             </section>
             {type && (
-              <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 md:p-6">
+              <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 md:p-5">
                 <div className="flex flex-col md:flex-row md:items-end gap-4 mb-5">
                   <div className="flex gap-4 w-full md:w-auto">
                     <DateField label="From" value={from} onChange={setFrom} />
@@ -689,7 +688,7 @@ export default function Reports() {
                   </div>
                 </div>
                 {error && (
-                  <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-start gap-2 relative animate-fade-in">
+                  <div className="mb-3 p-2 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm font-medium flex items-start gap-2 relative animate-fade-in">
                     <span className="mt-0.5">{error}</span>
                     <button
                       onClick={() => setError(null)}
@@ -722,65 +721,6 @@ export default function Reports() {
               </section>
             )}
           </div>
-          {/* Right Column: Placeholder / contextual panel */}
-          <aside className="lg:col-span-1">
-            {!type && (
-              <div className="h-full rounded-xl border border-dashed border-gray-300 bg-white/60 backdrop-blur flex flex-col items-center justify-center p-8 text-center text-gray-500">
-                <div className="w-14 h-14 rounded-full bg-white shadow flex items-center justify-center ring-1 ring-gray-200 mb-4">
-                  <FiBarChart2 className="w-7 h-7 text-gray-500" />
-                </div>
-                <h3 className="font-semibold text-gray-700 mb-1">
-                  Select a Report Type
-                </h3>
-                <p className="text-xs leading-relaxed max-w-[220px]">
-                  Choose a report type from the options on the left to get
-                  started.
-                </p>
-              </div>
-            )}
-            {type && (
-              <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-6 space-y-4">
-                {(() => {
-                  const meta = REPORT_TYPES.find((r) => r.key === type);
-                  return (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <span className="w-10 h-10 inline-flex items-center justify-center rounded-md bg-white shadow-sm ring-1 ring-gray-200 text-gray-700">
-                          {meta?.icon}
-                        </span>
-                        <div>
-                          <h3 className="font-medium text-gray-800 text-sm">
-                            {meta?.label}
-                          </h3>
-                          <p className="text-xs text-gray-500 mt-0.5 leading-snug max-w-[220px]">
-                            {meta?.desc}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-700 text-white font-medium shadow-sm">
-                        <span>⏱</span> {meta?.eta}
-                      </div>
-                      <ul className="text-xs text-gray-600 list-disc pl-4 space-y-1">
-                        <li>Adjust the date range</li>
-                        <li>Use shortcuts for quick periods</li>
-                        <li>Export as CSV or PDF</li>
-                      </ul>
-                      {data && (
-                        <div className="pt-2 border-t border-gray-200">
-                          <p className="text-xs text-gray-500">
-                            Last generated{" "}
-                            <span className="font-medium text-gray-700">
-                              {new Date().toLocaleTimeString()}
-                            </span>
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            )}
-          </aside>
         </div>
       </div>
     </div>

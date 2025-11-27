@@ -27,6 +27,10 @@ export default function IsoDatePicker({
     onChange(iso);
   };
 
+  // Prevent selecting future dates: cap to today
+  const today = new Date();
+  const computedMaxDate = today;
+
   return (
     <div className="relative w-full">
       <DatePicker
@@ -41,7 +45,7 @@ export default function IsoDatePicker({
         showYearDropdown
         dropdownMode="select"
         minDate={new Date(minYear, 0, 1)}
-        maxDate={new Date(maxYear, 11, 31)}
+        maxDate={computedMaxDate}
         dateFormat="yyyy-MM-dd"
       />
     </div>

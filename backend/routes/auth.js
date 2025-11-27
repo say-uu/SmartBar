@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
+const dns = require("dns").promises;
 
 // Multer setup for larger photo uploads (default 8MB, configurable via env)
 // Raise BASE64 fallback default to 8MB so the fallback path does not immediately fail with 413/400
@@ -457,18 +458,23 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { id, password } = req.body;
+    console.log("[POST /api/auth/login] incoming id:", id);
     if (!id || !password) {
       return res
         .status(400)
         .json({ error: "Service Number and password are required." });
     }
     const cadet = await Cadet.findOne({ serviceNumber: id });
+    console.log(
+      `[POST /api/auth/login] cadet found: ${cadet ? "yes" : "no"} for id=${id}`
+    );
     if (!cadet) {
       return res
         .status(400)
         .json({ error: "Invalid Service Number or password." });
     }
     const isMatch = await cadet.comparePassword(password);
+    console.log("[POST /api/auth/login] password match:", !!isMatch);
     if (!isMatch) {
       return res
         .status(400)
@@ -660,6 +666,35 @@ router.get("/profile/photo", async (req, res) => {
 });
 
 module.exports = router;
+
+// Email existence check (best-effort): checks MX records or A records for domain
+// Endpoint: POST /api/auth/check-email
+router.post("/check-email", async (req, res) => {
+  try {
+    const email = (req.body?.email || "").toString().trim();
+    if (!email || !email.includes("@"))
+      return res.status(400).json({ exists: false, error: "Invalid email" });
+    const domain = email.split("@").pop();
+    if (!domain) return res.json({ exists: false });
+    // Try MX records first
+    try {
+      const mx = await dns.resolveMx(domain);
+      if (mx && mx.length > 0) return res.json({ exists: true });
+    } catch (e) {
+      // ignore and try A records
+    }
+    try {
+      const a = await dns.resolve4(domain);
+      if (a && a.length > 0) return res.json({ exists: true });
+    } catch (e) {
+      // give up
+    }
+    return res.json({ exists: false });
+  } catch (err) {
+    console.error("/check-email error:", err);
+    return res.status(500).json({ exists: false, error: "Lookup failed" });
+  }
+});
 
 // Debug route: returns cadet photo metadata and whether file exists (dev only)
 if (process.env.NODE_ENV !== "production") {

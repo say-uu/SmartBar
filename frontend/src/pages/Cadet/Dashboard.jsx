@@ -188,10 +188,8 @@ export default function CadetDashboard() {
               {user?.name ? user.name[0] : "C"}
             </div>
             <div>
-              <div className="font-bold text-lg text-blue-900">Smartbar</div>
-              <div className="text-xs text-blue-600">
-                Cadet Management System
-              </div>
+              <div className="font-bold text-lg text-blue-900">Smart Bar</div>
+              <div className="text-xs text-blue-600">Bar Management System</div>
             </div>
           </div>
           <div className="flex items-center gap-6">
@@ -208,9 +206,7 @@ export default function CadetDashboard() {
             <button
               className="text-blue-600 hover:underline font-medium"
               onClick={() => navigate("/")}
-            >
-              Exit
-            </button>
+            ></button>
           </div>
         </div>
         <div className="flex gap-7">

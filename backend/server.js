@@ -116,22 +116,29 @@ const REQUIRE_DB_ON_START = process.env.REQUIRE_DB_ON_START === "true"; // if tr
 function startServer() {
   if (!app._started) {
     app._started = true;
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
       // Lightweight route summary (top-level only) to confirm /api/auth loaded
       try {
-        const authLayer = app._router.stack.find(
-          (l) =>
-            l?.name === "router" &&
-            String(l.regexp).includes("^\\/api\\/auth\\/?$")
-        );
+        const authLayer = app._router && app._router.stack && app._router.stack.find
+          ? app._router.stack.find((l) =>
+              String(l?.regexp || "").includes("^\\/api\\/auth\\\/?$")
+            )
+          : null;
         if (authLayer) {
-          const photoRouteExists = authLayer.handle.stack.some(
-            (r) => r.route && r.route.path === "/profile/photo"
-          );
-          console.log(
-            `[Debug] /api/auth/profile/photo registered: ${photoRouteExists}`
-          );
+          const handle = authLayer.handle;
+          if (handle && handle.stack && Array.isArray(handle.stack)) {
+            const photoRouteExists = handle.stack.some(
+              (r) => r.route && r.route.path === "/profile/photo"
+            );
+            console.log(
+              `[Debug] /api/auth/profile/photo registered: ${photoRouteExists}`
+            );
+          } else {
+            console.log(
+              "[Debug] /api/auth router layer found but nested stack is unavailable."
+            );
+          }
         } else {
           console.log("[Debug] /api/auth router layer not found yet.");
         }

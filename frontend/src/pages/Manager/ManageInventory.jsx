@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FiPackage } from "react-icons/fi";
+import { FiPackage, FiEdit2, FiX, FiTrash2, FiPlus } from "react-icons/fi";
 import axiosClient from "../../api/axiosClient";
 
 // Client-side mirror of backend unit size derivation for immediate UI display
@@ -27,6 +27,31 @@ function deriveUnitSize(category, name = "") {
   return "";
 }
 
+const CATEGORY_STORAGE_KEY = "sb-extra-categories";
+const NEW_CATEGORY_VALUE = "__add_new_category__";
+
+function loadStoredCategories() {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = JSON.parse(
+      window.localStorage.getItem(CATEGORY_STORAGE_KEY) || "[]"
+    );
+    if (Array.isArray(stored)) {
+      return Array.from(
+        new Set(
+          stored
+            .filter((c) => typeof c === "string")
+            .map((c) => c.trim())
+            .filter(Boolean)
+        )
+      );
+    }
+  } catch (err) {
+    console.warn("Failed to parse stored categories", err);
+  }
+  return [];
+}
+
 export default function ManageInventory() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +60,7 @@ export default function ManageInventory() {
   // Category filter ("All" shows everything)
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [creating, setCreating] = useState(false);
+  const [formError, setFormError] = useState("");
   const [newItem, setNewItem] = useState({
     name: "",
     desc: "",
@@ -45,6 +71,23 @@ export default function ManageInventory() {
     img: "",
     unitSize: "",
   });
+  const [customCategories, setCustomCategories] =
+    useState(loadStoredCategories);
+  const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
+  const [categoryDraft, setCategoryDraft] = useState("");
+  const [categoryManagerMessage, setCategoryManagerMessage] = useState({
+    tone: "muted",
+    text: "",
+  });
+  const [categoryComposerVisible, setCategoryComposerVisible] = useState(false);
+  const [inlineCategoryDraft, setInlineCategoryDraft] = useState("");
+  const [inlineCategoryMessage, setInlineCategoryMessage] = useState({
+    tone: "muted",
+    text: "",
+  });
+  const [confirmDialog, setConfirmDialog] = useState(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [manageCategoriesMode, setManageCategoriesMode] = useState(false);
 
   async function fetchInventory() {
     setError("");
@@ -63,14 +106,76 @@ export default function ManageInventory() {
     fetchInventory();
   }, []);
 
-  // Derive unique categories for pill filters
-  const categories = useMemo(() => {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      CATEGORY_STORAGE_KEY,
+      JSON.stringify(customCategories)
+    );
+  }, [customCategories]);
+
+  const detectedCategories = useMemo(() => {
     const set = new Set();
     (items || []).forEach((i) => {
       if (i.category) set.add(i.category.trim());
     });
-    return ["All", ...Array.from(set).sort((a, b) => a.localeCompare(b))];
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [items]);
+
+  const categoryOptions = useMemo(() => {
+    const set = new Set(detectedCategories);
+    set.add("Other");
+    customCategories.forEach((cat) => set.add(cat));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [detectedCategories, customCategories]);
+
+  const pillCategories = useMemo(() => {
+    return ["All", ...categoryOptions];
+  }, [categoryOptions]);
+
+  useEffect(() => {
+    if (
+      categoryFilter !== "All" &&
+      !categoryOptions.some(
+        (cat) => cat.toLowerCase() === categoryFilter.toLowerCase()
+      )
+    ) {
+      setCategoryFilter("All");
+    }
+  }, [categoryFilter, categoryOptions]);
+
+  useEffect(() => {
+    if (!categoryOptions.length) return;
+    setNewItem((prev) => {
+      if (!prev.category) {
+        const fallback = categoryOptions[0];
+        return {
+          ...prev,
+          category: fallback,
+          unitSize: deriveUnitSize(fallback, prev.name),
+        };
+      }
+
+      const match = categoryOptions.find(
+        (cat) => cat.toLowerCase() === prev.category.toLowerCase()
+      );
+      if (match && match === prev.category) return prev;
+      if (match) {
+        return {
+          ...prev,
+          category: match,
+          unitSize: deriveUnitSize(match, prev.name),
+        };
+      }
+
+      const fallback = categoryOptions[0];
+      return {
+        ...prev,
+        category: fallback,
+        unitSize: deriveUnitSize(fallback, prev.name),
+      };
+    });
+  }, [categoryOptions]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -84,6 +189,71 @@ export default function ManageInventory() {
     });
   }, [items, search, categoryFilter]);
 
+  const addCategoryByName = (label, setFeedback) => {
+    const trimmed = (label || "").trim();
+    if (!trimmed) {
+      setFeedback?.({ tone: "error", text: "Enter a category name." });
+      return null;
+    }
+    const exists = categoryOptions.some(
+      (cat) => cat.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (exists) {
+      setFeedback?.({ tone: "error", text: "Category already exists." });
+      return null;
+    }
+    setCustomCategories((prev) => [...prev, trimmed]);
+    setFeedback?.({
+      tone: "success",
+      text: `Added "${trimmed}" to your quick list.`,
+    });
+    return trimmed;
+  };
+
+  const handleAddCategoryFromPanel = () => {
+    const added = addCategoryByName(categoryDraft, setCategoryManagerMessage);
+    if (added) {
+      setCategoryDraft("");
+    }
+  };
+
+  const handleInlineCategorySave = () => {
+    const added = addCategoryByName(
+      inlineCategoryDraft,
+      setInlineCategoryMessage
+    );
+    if (added) {
+      setInlineCategoryDraft("");
+      setCategoryComposerVisible(false);
+      setNewItem((prev) => ({
+        ...prev,
+        category: added,
+        unitSize: deriveUnitSize(added, prev.name),
+      }));
+    }
+  };
+
+  const closeInlineComposer = () => {
+    setCategoryComposerVisible(false);
+    setInlineCategoryDraft("");
+    setInlineCategoryMessage({ tone: "muted", text: "" });
+  };
+
+  const handleCategorySelect = (value) => {
+    if (value === NEW_CATEGORY_VALUE) {
+      setCategoryComposerVisible(true);
+      return;
+    }
+    setCategoryComposerVisible(false);
+    setInlineCategoryDraft("");
+    setInlineCategoryMessage({ tone: "muted", text: "" });
+    setNewItem((prev) => ({
+      ...prev,
+      category: value,
+      unitSize: deriveUnitSize(value, prev.name),
+    }));
+  };
+
   const updateItem = async (id, patch) => {
     try {
       const res = await axiosClient.patch(`/api/inventory/${id}`, patch);
@@ -93,38 +263,60 @@ export default function ManageInventory() {
     }
   };
 
-  const deleteItem = async (id, name) => {
-    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  const deleteItem = async (id) => {
     try {
       await axiosClient.delete(`/api/inventory/${id}`);
       setItems((prev) => prev.filter((it) => it._id !== id));
     } catch (err) {
-      alert(err.response?.data?.error || "Delete failed");
+      throw new Error(err.response?.data?.error || "Delete failed");
     }
   };
 
   const createItem = async () => {
     try {
+      setFormError("");
+      // Basic validation
+      const name = (newItem.name || "").toString().trim();
+      if (!name) {
+        setFormError("Name is required.");
+        return;
+      }
+      const price = parseFloat(newItem.price);
+      if (isNaN(price) || price < 0) {
+        setFormError("Enter a valid non-negative price.");
+        return;
+      }
+      const stock = parseInt(newItem.stock, 10);
+      if (isNaN(stock) || stock < 0) {
+        setFormError("Enter a valid non-negative stock value.");
+        return;
+      }
+      const categoryValue = (newItem.category || "").toString().trim();
+      if (!categoryValue) {
+        setFormError("Select a category.");
+        return;
+      }
+
       setCreating(true);
       const payload = {
-        name: newItem.name.trim(),
-        desc: newItem.desc,
-        category: newItem.category,
-        price: Number(newItem.price),
-        stock: Number(newItem.stock),
-        status: newItem.status,
-        img: newItem.img,
+        name,
+        desc: newItem.desc || "",
+        category: categoryValue,
+        price,
+        stock,
+        status: newItem.status || "Available",
+        img: newItem.img || "",
         unitSize: newItem.unitSize || undefined,
       };
-      if (!payload.name) return alert("Name is required");
-      if (isNaN(payload.price) || payload.price < 0)
-        return alert("Enter a valid price");
+
       const res = await axiosClient.post("/api/inventory", payload);
-      setItems((prev) => [res.data, ...prev]);
+      // Prepend created item to the list
+      setItems((prev) => [res.data, ...(prev || [])]);
+      // Reset form (keep category default)
       setNewItem({
         name: "",
         desc: "",
-        category: "Other",
+        category: newItem.category || "Other",
         price: 0,
         stock: 0,
         status: "Available",
@@ -132,7 +324,7 @@ export default function ManageInventory() {
         unitSize: "",
       });
     } catch (err) {
-      alert(err.response?.data?.error || "Create failed");
+      setFormError(err.response?.data?.error || "Create failed");
     } finally {
       setCreating(false);
     }
@@ -153,18 +345,107 @@ export default function ManageInventory() {
     }
   };
 
+  const promptItemDeletion = (item) => {
+    setConfirmDialog({
+      title: "Delete item",
+      message: `Delete "${item.name}"? This cannot be undone.`,
+      confirmLabel: "Delete item",
+      variant: "danger",
+      onConfirm: () => deleteItem(item._id),
+    });
+  };
+
+  const promptCategoryRemoval = (category) => {
+    setConfirmDialog({
+      title: "Remove category",
+      message: `Remove "${category}" from your quick list? Existing items keep their label.`,
+      confirmLabel: "Remove category",
+      variant: "danger",
+      onConfirm: () => {
+        setCustomCategories((prev) =>
+          prev.filter((cat) => cat.toLowerCase() !== category.toLowerCase())
+        );
+        if (categoryFilter === category) {
+          setCategoryFilter("All");
+        }
+        setNewItem((prev) => {
+          if (!prev.category || prev.category !== category) return prev;
+          const fallback =
+            categoryOptions.find((cat) => cat !== category) || "Other";
+          return {
+            ...prev,
+            category: fallback,
+            unitSize: deriveUnitSize(fallback, prev.name),
+          };
+        });
+        setCategoryManagerMessage({
+          tone: "muted",
+          text: `Removed "${category}" from quick picks.`,
+        });
+      },
+    });
+  };
+
+  // Fully delete a category: reassign all items to 'Other'
+  const promptCategoryDelete = (category) => {
+    setConfirmDialog({
+      title: "Delete category",
+      message: `Delete category "${category}" and move all its items to 'Other'? This cannot be undone.`,
+      confirmLabel: "Delete category",
+      variant: "danger",
+      onConfirm: async () => {
+        const affected = items.filter((i) => i.category === category);
+        for (const it of affected) {
+          try {
+            setItems((prev) =>
+              prev.map((x) =>
+                x._id === it._id ? { ...x, category: "Other" } : x
+              )
+            );
+            await axiosClient.patch(`/api/inventory/${it._id}`, {
+              category: "Other",
+            });
+          } catch (err) {
+            console.warn("Failed to update item", it._id, err);
+          }
+        }
+        setCustomCategories((prev) => prev.filter((c) => c !== category));
+        if (categoryFilter === category) setCategoryFilter("All");
+      },
+    });
+  };
+
+  const closeConfirmDialog = () => {
+    if (confirmLoading) return;
+    setConfirmDialog(null);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmDialog?.onConfirm) return;
+    try {
+      setConfirmLoading(true);
+      await confirmDialog.onConfirm();
+      setConfirmDialog(null);
+    } catch (err) {
+      const message = err?.message || "Action failed";
+      alert(message);
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-white">
+      <div className="flex items-center justify-center bg-gradient-to-br from-slate-50 to-white py-12">
         <div className="text-lg text-slate-700">Loading inventory...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-sky-50 py-10 px-4">
+    <div className="bg-gradient-to-b from-slate-50 via-white to-sky-50 py-4 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8 bg-white/80 backdrop-blur rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-4 bg-white/80 backdrop-blur rounded-xl border border-slate-200 p-2 shadow-sm">
           <div>
             <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
               <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-sky-100 text-sky-700">
@@ -190,12 +471,12 @@ export default function ManageInventory() {
           </div>
         </div>
         {error && (
-          <div className="mb-4 p-3 rounded bg-rose-50 text-rose-700 border border-rose-200">
+          <div className="mb-3 p-2 rounded bg-rose-50 text-rose-700 border border-rose-200 text-sm">
             {error}
           </div>
         )}
-        <div className="flex mb-6">
-          <div className="relative w-full md:w-1/2">
+        <div className="flex mb-3">
+          <div className="relative w-full">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -222,37 +503,58 @@ export default function ManageInventory() {
         </div>
 
         {/* Category Filter Pills */}
-        <div className="mb-4 -mt-2">
+        <div className="mb-2 -mt-1">
           <div
-            className="flex gap-2 overflow-x-auto pb-1"
+            className="flex gap-1.5 overflow-x-auto pb-1"
             role="tablist"
             aria-label="Filter inventory by category"
           >
-            {categories.map((cat) => {
+            {pillCategories.map((cat) => {
               const active = cat === categoryFilter;
+              const deletable = manageCategoriesMode && cat !== "All";
               return (
-                <button
-                  key={cat}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setCategoryFilter(cat)}
-                  className={
-                    (active
-                      ? "bg-emerald-600 text-white shadow-sm border-emerald-600"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200") +
-                    " whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium border transition focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  }
-                >
-                  {cat}
-                </button>
+                <div key={cat} className="relative shrink-0">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setCategoryFilter(cat)}
+                    className={
+                      (active
+                        ? "bg-emerald-600 text-white shadow-sm border-emerald-600"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200") +
+                      (deletable ? " pr-7" : " pr-3") +
+                      " whitespace-nowrap pl-3 py-1.5 rounded-lg text-sm font-medium border transition focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    }
+                  >
+                    {cat}
+                  </button>
+                  {deletable && (
+                    <button
+                      type="button"
+                      title={`Delete category ${cat}`}
+                      aria-label={`Delete category ${cat}`}
+                      onClick={() => promptCategoryDelete(cat)}
+                      className="absolute top-1 right-1 w-4 h-4 rounded-full bg-rose-600 text-white flex items-center justify-center text-[9px] shadow hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                    >
+                      <FiX />
+                    </button>
+                  )}
+                </div>
               );
             })}
+            <button
+              type="button"
+              onClick={() => setManageCategoriesMode((m) => !m)}
+              className="whitespace-nowrap px-3 py-1.5 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition"
+            >
+              {manageCategoriesMode ? "Done" : "Edit"}
+            </button>
           </div>
         </div>
 
         {/* Meta row */}
-        <div className="flex flex-wrap items-center gap-4 mb-3 text-sm text-slate-600">
+        <div className="flex flex-wrap items-center gap-3 mb-2 text-sm text-slate-600">
           <div>
             Showing{" "}
             <span className="font-semibold text-slate-900">
@@ -278,104 +580,183 @@ export default function ManageInventory() {
         </div>
 
         {/* Add New Item */}
-        <div className="mb-6 bg-gradient-to-b from-white to-slate-50 rounded-2xl shadow border border-slate-200 p-4">
+        <div className="mb-4 bg-white rounded-xl shadow-sm border border-slate-200 p-4">
           <div className="text-sm font-semibold text-slate-900 mb-3">
             Add New Item
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-            <input
-              className="rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-              placeholder="Name*"
-              value={newItem.name}
-              onChange={(e) =>
-                setNewItem((p) => {
-                  const name = e.target.value;
-                  return {
-                    ...p,
-                    name,
-                    unitSize: deriveUnitSize(p.category, name),
-                  };
-                })
-              }
-            />
-            <input
-              className="rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-              placeholder="Category"
-              value={newItem.category}
-              onChange={(e) =>
-                setNewItem((p) => {
-                  const category = e.target.value;
-                  return {
-                    ...p,
-                    category,
-                    unitSize: deriveUnitSize(category, p.name),
-                  };
-                })
-              }
-            />
-            <input
-              type="number"
-              min="0"
-              className="rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-              placeholder="Price (Rs.)"
-              value={newItem.price}
-              onChange={(e) =>
-                setNewItem((p) => ({ ...p, price: e.target.value }))
-              }
-            />
-            <input
-              type="number"
-              min="0"
-              className="rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-              placeholder="Stock"
-              value={newItem.stock}
-              onChange={(e) =>
-                setNewItem((p) => ({ ...p, stock: e.target.value }))
-              }
-            />
-            <select
-              className="rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-              value={newItem.status}
-              onChange={(e) =>
-                setNewItem((p) => ({ ...p, status: e.target.value }))
-              }
-            >
-              <option>Available</option>
-              <option>Unavailable</option>
-            </select>
-            <input
-              className="rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-              placeholder="Unit Size (e.g. 250ml, 120g)"
-              value={newItem.unitSize}
-              onChange={(e) =>
-                setNewItem((p) => ({ ...p, unitSize: e.target.value }))
-              }
-            />
-            <input
-              className="rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent md:col-span-3"
-              placeholder="Image URL (optional)"
-              value={newItem.img}
-              onChange={(e) =>
-                setNewItem((p) => ({ ...p, img: e.target.value }))
-              }
-            />
-            <input
-              className="rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent md:col-span-3"
-              placeholder="Short description"
-              value={newItem.desc}
-              onChange={(e) =>
-                setNewItem((p) => ({ ...p, desc: e.target.value }))
-              }
-            />
-          </div>
-          <div className="mt-3">
-            <button
-              disabled={creating}
-              onClick={createItem}
-              className="px-4 py-2 rounded-xl bg-emerald-600 text-white shadow-sm hover:shadow-md hover:bg-emerald-700 transition disabled:opacity-50"
-            >
-              {creating ? "Adding..." : "Add Item"}
-            </button>
+          {formError && (
+            <div className="mb-3 text-sm text-rose-700 font-medium">
+              {formError}
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-start">
+            {/* Name */}
+            <div className="md:col-span-2">
+              <input
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                placeholder="Name*"
+                value={newItem.name}
+                onChange={(e) =>
+                  setNewItem((p) => {
+                    const name = e.target.value;
+                    return {
+                      ...p,
+                      name,
+                      unitSize: deriveUnitSize(p.category, name),
+                    };
+                  })
+                }
+              />
+            </div>
+            {/* Category select or composer */}
+            {!categoryComposerVisible && (
+              <div className="md:col-span-1">
+                <select
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                  value={newItem.category}
+                  onChange={(e) => handleCategorySelect(e.target.value)}
+                >
+                  {categoryOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                  <option value={NEW_CATEGORY_VALUE}>
+                    + Add new category...
+                  </option>
+                </select>
+              </div>
+            )}
+            {categoryComposerVisible && (
+              <div className="md:col-span-2 flex flex-col gap-2">
+                <input
+                  autoFocus
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                  placeholder="New category name"
+                  value={inlineCategoryDraft}
+                  onChange={(e) => setInlineCategoryDraft(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={!inlineCategoryDraft.trim()}
+                    onClick={handleInlineCategorySave}
+                    className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+                  >
+                    <span className="inline-flex items-center gap-1 justify-center w-full">
+                      <FiPlus /> Save
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeInlineComposer}
+                    className="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-300 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {inlineCategoryDraft && (
+                  <div className="text-xs text-slate-500 px-1">
+                    Press Save to add category to list.
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Price */}
+            <div className="md:col-span-1">
+              <input
+                type="number"
+                min="0"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                placeholder="Price (Rs.)"
+                value={newItem.price}
+                onChange={(e) =>
+                  setNewItem((p) => ({ ...p, price: e.target.value }))
+                }
+              />
+            </div>
+            {/* Stock */}
+            <div className="md:col-span-1">
+              <input
+                type="number"
+                min="0"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                placeholder="Stock"
+                value={newItem.stock}
+                onChange={(e) =>
+                  setNewItem((p) => ({ ...p, stock: e.target.value }))
+                }
+              />
+            </div>
+            {/* Status */}
+            <div className="md:col-span-1">
+              <select
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                value={newItem.status}
+                onChange={(e) =>
+                  setNewItem((p) => ({ ...p, status: e.target.value }))
+                }
+              >
+                <option>Available</option>
+                <option>Unavailable</option>
+              </select>
+            </div>
+            {/* Unit Size */}
+            <div className="md:col-span-1">
+              <input
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                placeholder="Unit Size (e.g. 250ml, 120g)"
+                value={newItem.unitSize}
+                onChange={(e) =>
+                  setNewItem((p) => ({ ...p, unitSize: e.target.value }))
+                }
+              />
+            </div>
+            {/* Add Button (fills remaining column when composer hidden) */}
+            {!categoryComposerVisible && (
+              <div className="md:col-span-1 flex items-start">
+                <button
+                  disabled={creating}
+                  onClick={createItem}
+                  className="w-full px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium shadow-sm hover:shadow-md hover:bg-emerald-700 transition disabled:opacity-50"
+                >
+                  {creating ? "Adding..." : "Add Item"}
+                </button>
+              </div>
+            )}
+            {categoryComposerVisible && (
+              <div className="md:col-span-1 flex items-start">
+                <button
+                  disabled={creating}
+                  onClick={createItem}
+                  className="w-full px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium shadow-sm hover:shadow-md hover:bg-emerald-700 transition disabled:opacity-50"
+                >
+                  {creating ? "Adding..." : "Add Item"}
+                </button>
+              </div>
+            )}
+            {/* Image URL */}
+            <div className="md:col-span-7">
+              <input
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                placeholder="Image URL (optional)"
+                value={newItem.img}
+                onChange={(e) =>
+                  setNewItem((p) => ({ ...p, img: e.target.value }))
+                }
+              />
+            </div>
+            {/* Description */}
+            <div className="md:col-span-7">
+              <input
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                placeholder="Short description"
+                value={newItem.desc}
+                onChange={(e) =>
+                  setNewItem((p) => ({ ...p, desc: e.target.value }))
+                }
+              />
+            </div>
           </div>
         </div>
 
@@ -383,13 +764,13 @@ export default function ManageInventory() {
           <table className="min-w-full">
             <thead className="bg-slate-50 text-slate-900 sticky top-0 z-10">
               <tr>
-                <th className="text-left p-3 font-semibold">Item</th>
-                <th className="text-left p-3 font-semibold">Category</th>
-                <th className="text-left p-3 font-semibold">Unit Size</th>
-                <th className="text-left p-3 font-semibold">Price (Rs.)</th>
-                <th className="text-left p-3 font-semibold">Stock</th>
-                <th className="text-left p-3 font-semibold">Status</th>
-                <th className="text-left p-3 font-semibold">Actions</th>
+                <th className="text-left p-2 font-semibold">Item</th>
+                <th className="text-left p-2 font-semibold">Category</th>
+                <th className="text-left p-2 font-semibold">Unit Size</th>
+                <th className="text-left p-2 font-semibold">Price (Rs.)</th>
+                <th className="text-left p-2 font-semibold">Stock</th>
+                <th className="text-left p-2 font-semibold">Status</th>
+                <th className="text-left p-2 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -400,14 +781,16 @@ export default function ManageInventory() {
                 >
                   <td className="p-3">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={it.img}
-                        alt={it.name}
-                        className="w-12 h-12 object-cover rounded-lg ring-1 ring-slate-100"
-                        onError={(e) =>
-                          (e.currentTarget.style.visibility = "hidden")
-                        }
-                      />
+                      {it.img && (
+                        <img
+                          src={it.img}
+                          alt={it.name}
+                          className="w-12 h-12 object-cover rounded-lg ring-1 ring-slate-100"
+                          onError={(e) =>
+                            (e.currentTarget.style.visibility = "hidden")
+                          }
+                        />
+                      )}
                       <div>
                         <div className="font-semibold text-slate-900">
                           {it.name}
@@ -556,7 +939,7 @@ export default function ManageInventory() {
                       <button
                         title="Delete item"
                         className="p-2 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-100 transition inline-flex items-center justify-center"
-                        onClick={() => deleteItem(it._id, it.name)}
+                        onClick={() => promptItemDeletion(it)}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -573,7 +956,7 @@ export default function ManageInventory() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-6 text-center text-gray-500">
+                  <td colSpan={7} className="p-6 text-center text-gray-500">
                     No items found
                   </td>
                 </tr>
@@ -581,6 +964,54 @@ export default function ManageInventory() {
             </tbody>
           </table>
         </div>
+        {confirmDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border border-slate-200 p-5 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                    {confirmDialog.title}
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    {confirmDialog.message}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="p-2 rounded-lg text-slate-500 hover:bg-slate-100"
+                  onClick={closeConfirmDialog}
+                  disabled={confirmLoading}
+                >
+                  <FiX />
+                </button>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 text-sm font-medium disabled:opacity-50"
+                  onClick={closeConfirmDialog}
+                  disabled={confirmLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAction}
+                  disabled={confirmLoading}
+                  className={
+                    "px-4 py-2 rounded-lg text-sm font-medium shadow-sm focus:outline-none " +
+                    (confirmDialog.variant === "danger"
+                      ? "bg-rose-600 hover:bg-rose-700 text-white"
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white") +
+                    (confirmLoading ? " opacity-50" : "")
+                  }
+                >
+                  {confirmLoading ? "Working..." : confirmDialog.confirmLabel}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -38,8 +38,13 @@ export default function CadetForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#232946] via-[#2d3a6b] to-[#1e3c72]">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+    <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center px-4">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/bar image.webp')" }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1b2444]/90 via-[#1f2d5f]/90 to-[#0f1f49]/90" />
+      <div className="relative z-10 w-full max-w-md bg-white/95 rounded-2xl shadow-2xl p-8 backdrop-blur-sm">
         <h2 className="text-3xl font-bold text-blue-700 mb-6 text-center">
           Forgot Password
         </h2>
@@ -73,7 +78,7 @@ export default function CadetForgotPassword() {
           />
           <button
             type="submit"
-            className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg transition"
+            className="w-full py-3 rounded-lg bg-[#0d6efd] hover:bg-[#0b5ed7] text-white font-semibold text-lg transition"
             disabled={loading}
           >
             {loading ? "Resetting..." : "Reset Password"}

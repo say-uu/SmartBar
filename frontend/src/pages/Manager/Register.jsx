@@ -70,11 +70,13 @@ export default function ManagerRegister() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ backgroundColor: "#4e342e" }}
-    >
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+    <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center px-4">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/bar image.webp')" }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1d0b05]/95 via-[#2b1209]/95 to-[#0d0402]/95" />
+      <div className="relative z-10 w-full max-w-md bg-white/95 rounded-2xl shadow-2xl p-8 backdrop-blur-sm">
         <h2 className="text-3xl font-bold text-[#a47551] mb-6 text-center">
           Create Manager Account
         </h2>

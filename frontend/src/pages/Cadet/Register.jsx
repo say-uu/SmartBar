@@ -25,11 +25,22 @@ export default function Register() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailExists, setEmailExists] = useState(null); // null=unknown, true/false
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [emailFormatValid, setEmailFormatValid] = useState(true);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (emailFormatValid === false) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (emailExists === false) {
+      setError("Email does not exist.Please provide a valid email address.");
+      return;
+    }
     if (
       !form.serviceNumber ||
       !form.name ||
@@ -84,9 +95,44 @@ export default function Register() {
     }
   };
 
+  // Check if email domain looks deliverable (best-effort). Uses backend DNS check.
+  const checkEmailExists = async (email) => {
+    const val = (email || "").toString().trim();
+    // Basic client-side email format check
+    const basicEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!val || !basicEmail.test(val)) {
+      setEmailFormatValid(false);
+      setEmailExists(null);
+      return;
+    }
+    setEmailFormatValid(true);
+    setCheckingEmail(true);
+    try {
+      const { data } = await axiosClient.post("/api/auth/check-email", {
+        email: val,
+      });
+      setEmailExists(!!data.exists);
+    } catch (e) {
+      // If backend returned an explicit exists flag, use it; otherwise treat as unknown
+      const explicit = e?.response?.data?.exists;
+      if (typeof explicit === "boolean") {
+        setEmailExists(!!explicit);
+      } else {
+        setEmailExists(null);
+      }
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#232946] via-[#2d3a6b] to-[#1e3c72]">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+    <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center px-4">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/bar image.webp')" }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1b2444]/90 via-[#1f2d5f]/90 to-[#0f1f49]/90" />
+      <div className="relative z-10 w-full max-w-md bg-white/95 rounded-2xl shadow-2xl p-8 backdrop-blur-sm">
         <h2 className="text-3xl font-bold text-blue-700 mb-6 text-center">
           Create Cadet Account
         </h2>
@@ -142,10 +188,29 @@ export default function Register() {
             name="email"
             placeholder="Email Address"
             value={form.email}
-            onChange={handleChange}
+            onChange={(e) => {
+              handleChange(e);
+              // reset existence/format state while editing
+              setEmailExists(null);
+              setEmailFormatValid(true);
+            }}
+            onBlur={() => checkEmailExists(form.email)}
             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
             required
           />
+          {checkingEmail && (
+            <div className="text-xs text-slate-500 mt-1">Checking email…</div>
+          )}
+          {emailFormatValid === false && (
+            <div className="text-xs text-red-500 mt-1">
+              Please enter a valid email address.
+            </div>
+          )}
+          {emailFormatValid !== false && emailExists === false && (
+            <div className="text-xs text-red-500 mt-1">
+              Email does not exist.
+            </div>
+          )}
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -187,8 +252,10 @@ export default function Register() {
           </div>
           <button
             type="submit"
-            className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg transition"
-            disabled={loading}
+            className="w-full py-3 rounded-lg bg-[#0d6efd] hover:bg-[#0b5ed7] text-white font-semibold text-lg transition"
+            disabled={
+              loading || emailExists === false || emailFormatValid === false
+            }
           >
             {loading ? "Creating..." : "Create Account"}
           </button>

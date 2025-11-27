@@ -54,6 +54,26 @@ export default function ProfileSettings() {
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
+  // When entering edit mode ensure firstName/lastName fields exist on profile so inputs
+  // are controlled independently from the combined `name` field.
+  useEffect(() => {
+    if (edit && profile) {
+      setProfile((prev) => {
+        const p = { ...(prev || {}) };
+        if (p.firstName === undefined || p.firstName === null) {
+          p.firstName = p.name ? String(p.name).split(" ")[0] || "" : "";
+        }
+        if (p.lastName === undefined || p.lastName === null) {
+          p.lastName = p.name
+            ? String(p.name).split(" ").slice(1).join(" ") || ""
+            : "";
+        }
+        return p;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edit]);
+
   const handleSave = async () => {
     setSaving(true);
     setError("");
@@ -93,6 +113,29 @@ export default function ProfileSettings() {
       setError("Failed to update profile.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const [removingPhoto, setRemovingPhoto] = useState(false);
+  const removePhoto = async () => {
+    if (!profile || !profile.photoUrl) return;
+    // Remove without showing a native confirm dialog (minimize modal interruptions)
+    setRemovingPhoto(true);
+    try {
+      await axiosClient.delete("/api/auth/profile/photo", {
+        data:
+          import.meta.env.MODE !== "production"
+            ? { serviceNumber: profile?.serviceNumber }
+            : undefined,
+      });
+      const updated = { ...(profile || {}), photoUrl: "" };
+      setProfile(updated);
+      setUser && setUser(updated);
+      setSuccess("Photo removed");
+    } catch (e) {
+      setError(e?.response?.data?.error || "Failed to remove photo");
+    } finally {
+      setRemovingPhoto(false);
     }
   };
 
@@ -163,6 +206,18 @@ export default function ProfileSettings() {
                 setSuccess("Photo updated!");
               }}
             />
+            {/* When editing allow explicit remove button (visible and accessible) */}
+            {edit && (profile.photoUrl || profile.photo) ? (
+              <div className="mt-3">
+                <button
+                  onClick={removePhoto}
+                  disabled={removingPhoto}
+                  className="text-sm text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-full border border-red-100"
+                >
+                  {removingPhoto ? "Removing..." : "Remove Photo"}
+                </button>
+              </div>
+            ) : null}
             <div className="font-bold text-xl text-[#1e2a55] text-center mt-4">
               {(profile.firstName || profile.name?.split(" ")[0] || "") +
                 (profile.lastName || profile.name?.split(" ").slice(1).join(" ")
@@ -210,7 +265,7 @@ export default function ProfileSettings() {
                 {edit ? (
                   <input
                     name="firstName"
-                    value={profile.firstName ?? firstName}
+                    value={profile.firstName ?? firstName ?? ""}
                     onChange={handleChange}
                     className="mt-1 border rounded-xl px-3 h-11 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -227,7 +282,7 @@ export default function ProfileSettings() {
                 {edit ? (
                   <input
                     name="lastName"
-                    value={profile.lastName ?? lastName}
+                    value={profile.lastName ?? lastName ?? ""}
                     onChange={handleChange}
                     className="mt-1 border rounded-xl px-3 h-11 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -244,13 +299,13 @@ export default function ProfileSettings() {
                 {edit ? (
                   <input
                     name="email"
-                    value={profile.email}
+                    value={profile.email || ""}
                     onChange={handleChange}
                     className="mt-1 border rounded-xl px-3 h-11 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 ) : (
                   <div className="mt-1 font-semibold text-[#1e2a55] flex items-center gap-2">
-                    <FiMail className="text-blue-600" /> {profile.email}
+                    <FiMail className="text-blue-600" /> {profile.email || "-"}
                   </div>
                 )}
               </div>
@@ -261,14 +316,15 @@ export default function ProfileSettings() {
                 {edit ? (
                   <input
                     name="serviceNumber"
-                    value={profile.serviceNumber}
+                    value={profile.serviceNumber || ""}
                     className="mt-1 border rounded-xl px-3 h-11 w-full bg-gray-100 cursor-not-allowed"
                     disabled
                     readOnly
                   />
                 ) : (
                   <div className="mt-1 font-semibold text-[#1e2a55] flex items-center gap-2">
-                    <FiHash className="text-blue-600" /> {profile.serviceNumber}
+                    <FiHash className="text-blue-600" />{" "}
+                    {profile.serviceNumber || "-"}
                   </div>
                 )}
               </div>
@@ -279,7 +335,7 @@ export default function ProfileSettings() {
                 {edit ? (
                   <input
                     name="intake"
-                    value={profile.intake ?? intakeValue}
+                    value={profile.intake ?? intakeValue ?? ""}
                     onChange={handleChange}
                     className="mt-1 border rounded-xl px-3 h-11 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -318,6 +374,7 @@ export default function ProfileSettings() {
                       profile.dob && profile.dob !== "-" ? profile.dob : ""
                     }
                     onChange={handleChange}
+                    max={new Date().toISOString().slice(0, 10)}
                     className="mt-1 border rounded-xl px-3 h-11 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 ) : (

@@ -1,18 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import "../styles/chatAnimations.css";
-import {
-  FiMessageCircle,
-  FiX,
-  FiSend,
-  FiRefreshCcw,
-  FiShoppingCart,
-} from "react-icons/fi";
+import { FiMessageCircle, FiX, FiSend, FiRefreshCcw } from "react-icons/fi";
 import axiosClient from "../api/axiosClient";
 
 /*
   Enhanced Chat Assistant (rule-based backend)
   Shows floating button when authenticated cadet user is present.
-  Supports action chips from backend: ADD_TO_CART, REORDER_LAST (placeholder client handling).
+  Does not render backend action chips (ADD_TO_CART / REORDER_LAST)
 */
 
 export default function ChatAssistant({ enabled }) {
@@ -112,24 +106,8 @@ export default function ChatAssistant({ enabled }) {
   }
 
   function handleAction(action) {
-    if (action.type === "ADD_TO_CART") {
-      // Placeholder: real implementation would hit /api/cart/add
-      setMessages((m) => [
-        ...m,
-        {
-          role: "assistant",
-          text: `Attempting to add ${action.name} to cart (implement API call).`,
-        },
-      ]);
-    } else if (action.type === "REORDER_LAST") {
-      setMessages((m) => [
-        ...m,
-        {
-          role: "assistant",
-          text: `Reorder logic placeholder for order ${action.orderId}.`,
-        },
-      ]);
-    }
+    // Action chips are intentionally ignored on the client UI.
+    return;
   }
 
   return (
@@ -199,17 +177,21 @@ export default function ChatAssistant({ enabled }) {
                   {m.text}
                   {m.actions && m.actions.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {m.actions.map((a, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => handleAction(a)}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 border border-indigo-200"
-                        >
-                          {a.type === "ADD_TO_CART" && <FiShoppingCart />}
-                          {a.type === "REORDER_LAST" && <FiRefreshCcw />}
-                          {a.name || a.type}
-                        </button>
-                      ))}
+                      {m.actions
+                        .filter(
+                          (a) =>
+                            a.type !== "REORDER_LAST" &&
+                            a.type !== "ADD_TO_CART"
+                        )
+                        .map((a, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleAction(a)}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 border border-indigo-200"
+                          >
+                            {a.name || a.type}
+                          </button>
+                        ))}
                     </div>
                   )}
                 </div>

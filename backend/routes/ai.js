@@ -82,6 +82,24 @@ function normalize(s) {
     .trim();
 }
 
+// Clean assistant reply text to remove unwanted prompt phrases
+function cleanReply(s) {
+  if (!s && s !== "") return s;
+  let out = String(s);
+  // Remove common phrasing that asks the user "Want one of those added?" or variants
+  out = out.replace(/\bwant one(?: of those)?(?: added)?\?\s*/gi, "");
+  // Remove leftover repeated whitespace and trim
+  out = out.replace(/\s{2,}/g, " ").trim();
+  return out;
+}
+
+function sendReply(res, payload) {
+  if (payload && typeof payload.reply === "string") {
+    payload.reply = cleanReply(payload.reply);
+  }
+  return res.json(payload);
+}
+
 function findItemByNameFragment(items, fragment) {
   const f = normalize(fragment);
   if (!f) return null;
@@ -173,7 +191,6 @@ router.post("/chat", authenticateToken, async (req, res) => {
         .join(", ");
       return res.json({
         reply: `Your last order (${lastOrder.orderId}) was: ${itemList}. Total Rs.${lastOrder.total}.`,
-        actions: [{ type: "REORDER_LAST", orderId: lastOrder.orderId }],
       });
     }
 
@@ -227,11 +244,6 @@ router.post("/chat", authenticateToken, async (req, res) => {
         const variants = top.map((c) => `${c.name} (Rs.${c.price})`).join(", ");
         return res.json({
           reply: `Cheapest ${categoryWord} item is ${cheapest.name} at Rs.${cheapest.price}. With Rs.${budget} you can buy up to ${maxQty}. Some options: ${variants}.`,
-          actions: top.map((c) => ({
-            type: "ADD_TO_CART",
-            itemId: c._id,
-            name: c.name,
-          })),
         });
       }
       if (itemFragment && itemFragment.length > 1) {
@@ -245,7 +257,6 @@ router.post("/chat", authenticateToken, async (req, res) => {
           }
           return res.json({
             reply: `You can buy ${qty} x ${it.name} with Rs.${budget} (each Rs.${it.price}).`,
-            actions: [{ type: "ADD_TO_CART", itemId: it._id, name: it.name }],
           });
         }
       }
@@ -265,9 +276,6 @@ router.post("/chat", authenticateToken, async (req, res) => {
       });
       return res.json({
         reply: `With Rs.${budget} you could buy: ${lines.join(", ")}.`,
-        actions: affordable
-          .slice(0, 3)
-          .map((c) => ({ type: "ADD_TO_CART", itemId: c._id, name: c.name })),
       });
     }
 
@@ -283,13 +291,6 @@ router.post("/chat", authenticateToken, async (req, res) => {
           const cheapest = catItems[0];
           return res.json({
             reply: `Tell me your budget (e.g. 'under 800' or 'with 1200') and I'll calculate how many ${categoryWord} items you can buy. Cheapest starts at Rs.${cheapest.price}.`,
-            actions: [
-              {
-                type: "ADD_TO_CART",
-                itemId: cheapest._id,
-                name: cheapest.name,
-              },
-            ],
           });
         } else {
           return res.json({
@@ -320,12 +321,7 @@ router.post("/chat", authenticateToken, async (req, res) => {
         return res.json({ reply: "Inventory seems empty right now." });
       const list = top.map((p) => `${p.name} (Rs.${p.price})`).join(", ");
       return res.json({
-        reply: `You could try: ${list}. Want one of those added?`,
-        actions: top.map((p) => ({
-          type: "ADD_TO_CART",
-          itemId: p._id,
-          name: p.name,
-        })),
+        reply: `You could try: ${list}.`,
       });
     }
 
@@ -339,9 +335,6 @@ router.post("/chat", authenticateToken, async (req, res) => {
       const replyList = formatAffordable(filteredAll, budget, 12);
       return res.json({
         reply: `Items up to Rs.${budget}: ${replyList}`,
-        actions: filteredAll
-          .slice(0, 3)
-          .map((f) => ({ type: "ADD_TO_CART", itemId: f._id, name: f.name })),
       });
     }
 
@@ -357,11 +350,6 @@ router.post("/chat", authenticateToken, async (req, res) => {
             reply: `Here are some ${catDetected} options: ${subset
               .map((s) => `${s.name} (Rs.${s.price})`)
               .join(", ")}`,
-            actions: subset.slice(0, 3).map((s) => ({
-              type: "ADD_TO_CART",
-              itemId: s._id,
-              name: s.name,
-            })),
           });
         }
       }
@@ -395,7 +383,6 @@ router.post("/chat", authenticateToken, async (req, res) => {
           }
           return res.json({
             reply: `${it.name} costs Rs.${it.price}${changeStr}.`,
-            actions: [{ type: "ADD_TO_CART", itemId: it._id, name: it.name }],
           });
         }
       }
@@ -441,9 +428,6 @@ router.post("/chat", authenticateToken, async (req, res) => {
         reply: `Within Rs.${budget} you can consider: ${filtered
           .map((f) => `${f.name} (Rs.${f.price})`)
           .join(", ")}`,
-        actions: filtered
-          .slice(0, 3)
-          .map((f) => ({ type: "ADD_TO_CART", itemId: f._id, name: f.name })),
       });
     }
 
@@ -456,9 +440,6 @@ router.post("/chat", authenticateToken, async (req, res) => {
         const replyList = formatAffordable(filteredAll, budget, 12);
         return res.json({
           reply: `Options for Rs.${budget} or less: ${replyList}`,
-          actions: filteredAll
-            .slice(0, 3)
-            .map((f) => ({ type: "ADD_TO_CART", itemId: f._id, name: f.name })),
         });
       }
     }

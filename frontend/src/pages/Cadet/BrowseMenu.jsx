@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { CartContext } from "../../contexts/CartContext";
+import { AuthContext } from "../../contexts/AuthContext";
 import axiosClient from "../../api/axiosClient";
 
 export default function BrowseMenu() {
@@ -513,10 +514,82 @@ export default function BrowseMenu() {
     });
   }, [items, search, selectedCat]);
 
-  // Cart context
-  const { addItem } = useContext(CartContext);
+  // Cart context + visual animation refs
+  const { addItem, count } = useContext(CartContext);
+  const { user } = useContext(AuthContext);
+  const cartBtnRef = React.useRef(null);
+  const badgeRef = React.useRef(null);
+  const [visualCount, setVisualCount] = React.useState(count || 0);
+
+  React.useEffect(() => {
+    setVisualCount(count || 0);
+  }, [count]);
   // Track quantity for each item by index
   const [quantities, setQuantities] = useState({});
+
+  // Animate a small "+N" bubble from the Add button to the cart badge for a modern add-to-cart feel
+  const animateAddToCartVisual = (startRect, qty) => {
+    try {
+      const cartNode = cartBtnRef.current;
+      if (!cartNode || !startRect) return;
+      const endRect = cartNode.getBoundingClientRect();
+
+      const size = 36;
+      const bubble = document.createElement("div");
+      bubble.textContent = qty > 1 ? `+${qty}` : "+1";
+      bubble.style.position = "fixed";
+      bubble.style.left = `${
+        startRect.left + startRect.width / 2 - size / 2
+      }px`;
+      bubble.style.top = `${startRect.top + startRect.height / 2 - size / 2}px`;
+      bubble.style.width = `${size}px`;
+      bubble.style.height = `${size}px`;
+      bubble.style.borderRadius = "9999px";
+      bubble.style.background = "linear-gradient(180deg,#10B981,#059669)";
+      bubble.style.color = "white";
+      bubble.style.display = "flex";
+      bubble.style.alignItems = "center";
+      bubble.style.justifyContent = "center";
+      bubble.style.fontWeight = "700";
+      bubble.style.boxShadow = "0 6px 18px rgba(0,0,0,0.18)";
+      bubble.style.zIndex = 9999;
+      bubble.style.transition =
+        "transform 650ms cubic-bezier(.2,.9,.2,1), opacity 650ms";
+      document.body.appendChild(bubble);
+
+      const translateX =
+        endRect.left +
+        endRect.width / 2 -
+        (startRect.left + startRect.width / 2);
+      const translateY =
+        endRect.top +
+        endRect.height / 2 -
+        (startRect.top + startRect.height / 2);
+
+      // animate
+      // eslint-disable-next-line no-unused-expressions
+      bubble.getBoundingClientRect();
+      requestAnimationFrame(() => {
+        bubble.style.transform = `translate(${translateX}px, ${translateY}px) scale(0.6)`;
+        bubble.style.opacity = "0.9";
+      });
+
+      // pop badge
+      if (badgeRef.current) {
+        badgeRef.current.classList.add("cart-badge-pop");
+        setTimeout(
+          () =>
+            badgeRef.current &&
+            badgeRef.current.classList.remove("cart-badge-pop"),
+          400
+        );
+      }
+
+      setTimeout(() => bubble.remove(), 700);
+    } catch (e) {
+      // ignore
+    }
+  };
 
   const handleQty = (idx, delta) => {
     setQuantities((prev) => {
@@ -526,23 +599,54 @@ export default function BrowseMenu() {
     });
   };
 
-  const handleAddToCart = (item, idx) => {
+  const handleAddToCart = async (item, idx) => {
     const qty = quantities[idx] || 1;
-    // Always use .name, .price, .img as .image for backend
-    addItem(
-      {
-        name: item.name,
-        price: item.price,
-        img: item.img,
-        image: item.img,
-      },
-      qty
-    );
-    setQuantities((prev) => ({ ...prev, [idx]: 1 })); // reset to 1 after add
+    if (!user?.serviceNumber) {
+      // Quick feedback if user not logged in
+      alert("Please sign in to add items to your cart.");
+      return;
+    }
+
+    // Optimistic visual increment
+    setVisualCount((v) => v + qty);
+
+    // Trigger visual animation immediately
+    const imgEl = document.querySelector(`img[data-idx="${idx}"]`);
+    if (imgEl) {
+      const r = imgEl.getBoundingClientRect();
+      animateAddToCartVisual(
+        { left: r.left, top: r.top, width: r.width, height: r.height },
+        qty
+      );
+    }
+
+    // Always attempt backend add and rollback visual count on failure
+    try {
+      await addItem(
+        {
+          name: item.name,
+          price: item.price,
+          img: item.img,
+          image: item.img,
+        },
+        qty
+      );
+      // reset quantity selector
+      setQuantities((prev) => ({ ...prev, [idx]: 1 }));
+    } catch (err) {
+      // rollback visual count and notify user
+      setVisualCount((v) => Math.max(0, v - qty));
+      // eslint-disable-next-line no-alert
+      alert("Failed to add item to cart. Please try again.");
+      // Also log error for debugging
+      // eslint-disable-next-line no-console
+      console.error("Add to cart failed (user-facing):", err);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 px-4">
+      <style>{`.cart-badge-pop{transform:scale(1.35);transition:transform 220ms ease}`}</style>
       <div className="max-w-7xl mx-auto">
         {/* Top Bar */}
         <div className="flex items-center justify-between mb-8">
@@ -552,7 +656,8 @@ export default function BrowseMenu() {
           </div>
           <Link
             to="/cadet/cart"
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 font-semibold bg-green-600 hover:bg-green-700 text-white text-lg"
+            ref={cartBtnRef}
+            className="relative inline-flex items-center gap-2 rounded-xl px-4 py-2 font-semibold bg-green-600 hover:bg-green-700 text-white text-lg"
           >
             {/* Trolley Icon */}
             <svg
@@ -575,6 +680,13 @@ export default function BrowseMenu() {
               <circle cx="18" cy="20" r="1.6" />
             </svg>
             <span>View Cart</span>
+            <span
+              ref={badgeRef}
+              className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs font-bold px-2 py-0.5 rounded-full"
+              aria-hidden="true"
+            >
+              {visualCount || 0}
+            </span>
           </Link>
         </div>
         {error && (
@@ -623,6 +735,7 @@ export default function BrowseMenu() {
               >
                 <div className="relative mb-2">
                   <img
+                    data-idx={idx}
                     src={item.img}
                     alt={item.name}
                     className="w-full h-40 object-cover rounded-xl"

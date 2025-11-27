@@ -177,13 +177,30 @@ export default function ProfilePhotoUploader({ profile, onUpdated }) {
   // ESC cancels current upload; Delete removes existing photo
   useEffect(() => {
     const onKey = (e) => {
+      // ESC cancels upload
       if (e.key === "Escape" && abortRef.current) abortRef.current.abort();
-      if (e.key === "Delete" || e.key === "Backspace") {
+
+      // Only treat Delete (not Backspace) as a global remove trigger and
+      // only when the focused element is NOT an input/textarea/contentEditable.
+      // This prevents accidental deletion when the user is editing text fields.
+      if (e.key === "Delete") {
+        try {
+          const tgt = e.target;
+          const tag =
+            (tgt && tgt.tagName && String(tgt.tagName).toLowerCase()) || "";
+          const isEditable =
+            tag === "input" || tag === "textarea" || tgt.isContentEditable;
+          if (isEditable) return;
+        } catch (err) {
+          // ignore and proceed
+        }
+
         if (currentPhoto && !uploading && !removing) {
           handleRemove();
         }
       }
     };
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [currentPhoto, uploading, removing]);

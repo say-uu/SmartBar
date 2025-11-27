@@ -25,6 +25,8 @@ export default function ManagerDashboard() {
   const [error, setError] = useState("");
   const [flash, setFlash] = useState(null);
   const [navOpen, setNavOpen] = useState(false);
+  const [allowanceValue, setAllowanceValue] = useState("15000");
+  const [allowanceSaving, setAllowanceSaving] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -91,6 +93,35 @@ export default function ManagerDashboard() {
     return `${days} d ago`;
   };
 
+  const handleSetAllowance = async () => {
+    const numeric = Number(allowanceValue);
+    if (!Number.isFinite(numeric) || numeric < 0) {
+      setFlash({ type: "error", message: "Enter a valid allowance amount." });
+      return;
+    }
+    setAllowanceSaving(true);
+    try {
+      const res = await axiosClient.post("/api/manager/cadets/set-allowance", {
+        amount: numeric,
+      });
+      const normalized = res.data?.value ?? Math.round(numeric);
+      setAllowanceValue(String(normalized));
+      setFlash({
+        type: "success",
+        message:
+          res.data?.message ||
+          `Monthly allowance updated to Rs.${normalized.toLocaleString()}`,
+      });
+    } catch (e) {
+      setFlash({
+        type: "error",
+        message: e.response?.data?.error || "Failed to update allowance.",
+      });
+    } finally {
+      setAllowanceSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -100,7 +131,7 @@ export default function ManagerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-rose-50 to-sky-50 py-10 px-5 md:py-14 md:px-10 relative">
+    <div className="min-h-[100vh] bg-gradient-to-b from-slate-50 via-rose-50 to-sky-50 py-6 px-6 md:py-8 md:px-10 relative">
       {/* Global Flash (fixed top) */}
       {flash && (
         <div
@@ -135,11 +166,11 @@ export default function ManagerDashboard() {
           </span>
         </div>
       )}
-      <div className="w-full mx-auto flex gap-7">
+      <div className="w-full mx-auto flex gap-6">
         <ManagerSidebar open={navOpen} onClose={() => setNavOpen(false)} />
-        <div className="flex-1 flex flex-col min-h-[calc(100vh-5rem)]">
+        <div className="flex-1 flex flex-col px-3 md:px-6">
           {/* Top bar */}
-          <div className="flex items-center justify-between mb-7 rounded-2xl p-6 md:p-7 shadow-md hover:shadow-lg transition border border-amber-900/40 bg-amber-800 relative">
+          <div className="flex items-center justify-between mb-4 rounded-2xl p-3 md:p-4 shadow-md hover:shadow-lg transition border border-amber-900/40 bg-amber-800 relative">
             <div className="flex items-center gap-3 relative z-10">
               <button
                 className="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/15 text-white shadow-sm ring-1 ring-white/20 hover:bg-white/20"
@@ -169,9 +200,9 @@ export default function ManagerDashboard() {
           </div>
 
           {/* Overview Tiles */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8 items-stretch auto-rows-fr">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-5 items-stretch auto-rows-fr">
             {/* Revenue */}
-            <div className="relative rounded-2xl p-5 shadow-sm hover:shadow-md transition bg-white border border-emerald-100 border-t-4 border-t-emerald-500 flex flex-col justify-between h-full min-h-[150px]">
+            <div className="relative rounded-2xl p-4 shadow-sm hover:shadow-md transition bg-white border border-emerald-100 border-t-4 border-t-emerald-500 flex flex-col justify-between h-full min-h-[120px]">
               <div className="text-sm font-semibold flex items-center gap-2 text-emerald-700">
                 <span>Revenue Today</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -222,12 +253,12 @@ export default function ManagerDashboard() {
           </div>
 
           {/* Quick actions (moved to middle) */}
-          <div className="bg-white/95 rounded-2xl shadow-sm p-4 md:p-5 border border-slate-200/80 backdrop-blur-sm mb-8">
+          <div className="bg-white/95 rounded-2xl shadow-sm p-3 md:p-4 border border-slate-200/80 backdrop-blur-sm mb-5">
             <div className="font-bold text-slate-900 mb-5 tracking-tight flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-500" /> Quick
               Actions
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch auto-rows-fr">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-stretch auto-rows-fr">
               <Link
                 to="/manager/inventory"
                 className="group relative rounded-xl p-4 border border-emerald-200/70 bg-emerald-50/60 hover:bg-emerald-50 hover:shadow-md transition"
@@ -282,18 +313,49 @@ export default function ManagerDashboard() {
                   </div>
                 </div>
               </Link>
+              <div className="rounded-xl p-4 border border-sky-200/70 bg-sky-50/70 shadow-sm flex flex-col gap-3">
+                <div className="flex items-center gap-2 text-sky-800 font-semibold">
+                  <span className="text-lg">₹</span>
+                  <span>Set Monthly Allowance</span>
+                </div>
+                <p className="text-xs text-sky-700">
+                  Apply a new monthly allowance value to every cadet account.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="number"
+                    min="0"
+                    value={allowanceValue}
+                    onChange={(e) => setAllowanceValue(e.target.value)}
+                    className="flex-1 rounded-xl border border-sky-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:outline-none bg-white"
+                    placeholder="e.g. 15000"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSetAllowance}
+                    disabled={allowanceSaving}
+                    className={`px-4 py-2 rounded-xl text-white font-semibold shadow inline-flex items-center justify-center ${
+                      allowanceSaving
+                        ? "bg-sky-300 cursor-wait"
+                        : "bg-sky-600 hover:bg-sky-700"
+                    }`}
+                  >
+                    {allowanceSaving ? "Saving..." : "Set"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Recent Activity + System Alerts (moved to last) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 flex-1 items-stretch auto-rows-fr">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 items-stretch auto-rows-fr">
             {/* Recent Activity */}
-            <div className="bg-white/95 rounded-2xl shadow-sm p-5 md:p-6 border border-slate-200/80 backdrop-blur-sm flex flex-col h-full">
+            <div className="bg-white/95 rounded-2xl shadow-sm p-4 md:p-5 border border-slate-200/80 backdrop-blur-sm flex flex-col h-full max-h-[380px]">
               <div className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="tracking-tight">Recent Activity</span>
               </div>
-              <div className="divide-y divide-slate-100/80 rounded-xl border border-slate-100 overflow-hidden bg-slate-50/30 flex-1">
+              <div className="divide-y divide-slate-100/80 rounded-xl border border-slate-100 overflow-hidden bg-slate-50/30 flex-1 overflow-y-auto">
                 {activities.map((a, idx) => {
                   const colorSet =
                     a.kind === "purchase"
@@ -362,12 +424,12 @@ export default function ManagerDashboard() {
             </div>
 
             {/* System Alerts */}
-            <div className="bg-white/95 rounded-2xl shadow-sm p-5 md:p-6 border border-slate-200/80 backdrop-blur-sm flex flex-col h-full">
+            <div className="bg-white/95 rounded-2xl shadow-sm p-4 md:p-5 border border-slate-200/80 backdrop-blur-sm flex flex-col h-full max-h-[380px]">
               <div className="font-semibold text-slate-900 mb-4 flex items-center gap-2 tracking-tight">
                 <span className="inline-block w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
                 <span>System Alerts</span>
               </div>
-              <div className="space-y-3 flex-1">
+              <div className="space-y-3 flex-1 overflow-y-auto pr-1">
                 {/* Critical */}
                 {alerts.critical && alerts.critical.length > 0 && (
                   <div className="rounded-xl border border-red-200 bg-gradient-to-br from-red-50 via-red-50 to-white p-4 shadow-sm">
